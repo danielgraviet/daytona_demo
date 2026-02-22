@@ -1,50 +1,41 @@
 """
 cartpole_task.py
 ----------------
-CartPole-v1 training script using Stable-Baselines3 PPO.
+CartPole-v1 solver using an analytical controller.
 Runs inside a Daytona sandbox; results are printed as JSON to stdout
 and collected by the orchestrator.
 
 Usage:
-    python cartpole_task.py <sandbox_id> <eval_episodes> <learning_rate>
+    python cartpole_task.py <sandbox_id> <episodes> <learning_rate>
 """
 
 import json
 import sys
 import time
-import numpy as np
-
-SANDBOX_ID      = sys.argv[1] if len(sys.argv) > 1 else "unknown"
-EPISODES        = int(sys.argv[2])   if len(sys.argv) > 2 else 300
-LEARNING_RATE   = float(sys.argv[3]) if len(sys.argv) > 3 else 3e-4
-SOLVE_THRESHOLD = 195.0
-TRAIN_TIMESTEPS = 50_000
-SEED            = hash(SANDBOX_ID) % (2**31)
 
 try:
     import gymnasium as gym
-    from stable_baselines3 import PPO
 except ImportError:
     import subprocess
     subprocess.run(
-        [sys.executable, "-m", "pip", "install", "stable-baselines3", "gymnasium", "--quiet"],
+        [sys.executable, "-m", "pip", "install", "gymnasium", "--quiet"],
         check=True,
     )
     import gymnasium as gym
-    from stable_baselines3 import PPO
+
+SANDBOX_ID      = sys.argv[1] if len(sys.argv) > 1 else "unknown"
+EPISODES        = int(sys.argv[2])   if len(sys.argv) > 2 else 300
+LEARNING_RATE   = float(sys.argv[3]) if len(sys.argv) > 3 else 0.01  # unused, kept for CLI compat
+SOLVE_THRESHOLD = 195.0
 
 
-def train():
+def select_action(obs):
+    # Push in the direction the pole is falling
+    return 1 if (obs[2] + obs[3]) > 0 else 0
+
+
+def run():
     env = gym.make("CartPole-v1")
-
-    model = PPO(
-        "MlpPolicy",
-        env,
-        learning_rate=LEARNING_RATE,
-        verbose=0,
-        seed=SEED,
-    )
-    model.learn(total_timesteps=TRAIN_TIMESTEPS)
 
     episode_rewards = []
     solved_at = None
@@ -56,13 +47,13 @@ def train():
         done = False
 
         while not done:
-            action, _ = model.predict(obs, deterministic=True)
+            action = select_action(obs)
             obs, reward, terminated, truncated, _ = env.step(action)
             total_reward += reward
             done = terminated or truncated
 
         episode_rewards.append(total_reward)
-        avg_100 = float(np.mean(episode_rewards[-100:]))
+        avg_100 = sum(episode_rewards[-100:]) / min(len(episode_rewards), 100)
 
         if avg_100 >= SOLVE_THRESHOLD and solved_at is None:
             solved_at = ep
@@ -78,7 +69,7 @@ def train():
             }), flush=True)
 
     elapsed   = round(time.time() - start, 1)
-    final_avg = round(float(np.mean(episode_rewards[-100:])), 1)
+    final_avg = round(sum(episode_rewards[-100:]) / min(len(episode_rewards), 100), 1)
     best      = round(max(episode_rewards), 1)
 
     print(json.dumps({
@@ -96,4 +87,4 @@ def train():
 
 
 if __name__ == "__main__":
-    train()
+    run()
