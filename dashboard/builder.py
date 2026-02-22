@@ -24,6 +24,9 @@ def build_dashboard(state: DemoState, episodes: int) -> Panel:
     header.append(f"{n_run} running   ", style="bold green")
     header.append("✅ ", style="dim")
     header.append(f"{n_done}/{state.total} complete   ", style="bold white")
+    if state.n_error:
+        header.append("✗ ", style="bold red")
+        header.append(f"{state.n_error} failed   ", style="bold red")
     header.append("🎯 ", style="dim")
     header.append(f"{state.n_solved} solved ({solved_pct}%)   ", style="bold yellow")
     header.append("📈 ", style="dim")

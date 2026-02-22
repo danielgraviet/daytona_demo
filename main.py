@@ -81,23 +81,32 @@ def main():
             live.update(build_dashboard(state, episodes))
 
     # ── Final summary ─────────────────────────────────────────────────────
+    n_done  = state.n_complete
+    n_err   = state.n_error
+
     console.print()
     console.rule("[bold cyan]Final Results[/]")
     console.print(f"  Total sandboxes : [bold]{n}[/]")
-    console.print(f"  Completed       : [bold green]{state.n_complete}[/]")
-    console.print(f"  Solved CartPole : [bold yellow]{state.n_solved}[/] ({round(state.n_solved/max(state.n_complete,1)*100,1)}%)")
+    console.print(f"  Completed       : [bold green]{n_done}/{n}[/]")
+    console.print(f"  Solved CartPole : [bold yellow]{state.n_solved}[/] ({round(state.n_solved/max(n_done,1)*100,1)}%)")
     console.print(f"  Avg final score : [bold magenta]{state.avg_final}[/]")
     console.print(f"  Wall time       : [bold cyan]{state.elapsed}s[/]")
-    console.print()
 
-    # ── Write errors to log file ───────────────────────────────────────────
-    errors = [r for r in state.results.values() if r.status == "error"]
-    if errors:
+    if n_err:
+        console.print()
+        console.print(f"  [bold red]{n_err} sandbox(es) failed or timed out[/] — "
+                      f"[green]{n_done} others completed unaffected.[/]")
+        console.print(f"  [dim]This is horizontal scaling in action: one bad experiment")
+        console.print(f"  never blocks the rest. A single beefy server has no such isolation.[/]")
+
         log_path = Path(__file__).parent / "errors.log"
         with log_path.open("w") as f:
-            for r in sorted(errors, key=lambda r: r.index):
+            for r in sorted((r for r in state.results.values() if r.status == "error"),
+                            key=lambda r: r.index):
                 f.write(f"[sandbox {r.index + 1}] id={r.sandbox_id}\n{r.error}\n\n")
-        console.print(f"[bold red]{len(errors)} errors[/] written to [cyan]{log_path}[/]\n")
+        console.print(f"  Error details → [cyan]{log_path}[/]")
+
+    console.print()
 
 
 if __name__ == "__main__":

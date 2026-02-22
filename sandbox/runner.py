@@ -32,11 +32,12 @@ def run_sandbox(
         )
 
         # Install gymnasium
-        sandbox.process.exec("pip install gymnasium --quiet")
+        sandbox.process.exec("pip install gymnasium --quiet", timeout=120)
 
         # Run training — capture stdout line by line
         response = sandbox.process.exec(
-            f"python /home/daytona/cartpole_task.py {sandbox_id} {episodes} {lr}"
+            f"python /home/daytona/cartpole_task.py {sandbox_id} {episodes} {lr}",
+            timeout=30,
         )
 
         # Parse JSON lines from stdout

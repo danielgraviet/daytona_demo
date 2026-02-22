@@ -54,6 +54,10 @@ class DemoState:
         return sum(1 for r in self.results.values() if r.status == "running")
 
     @property
+    def n_error(self):
+        return sum(1 for r in self.results.values() if r.status == "error")
+
+    @property
     def n_solved(self):
         return sum(1 for r in self.results.values() if r.solved)
 
