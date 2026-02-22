@@ -1,0 +1,12 @@
+[project]
+name = "daytona-demo"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "daytona-sdk>=0.144.0",
+    "gym>=0.26.2",
+    "gymnasium>=1.2.3",
+    "rich>=14.3.3",
+]
