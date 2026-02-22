@@ -7,7 +7,7 @@ Spins up N sandboxes in parallel, uploads cartpole_task.py to each,
 runs it, and streams results into a live Rich terminal dashboard.
 
 Usage:
-    python main.py --sandboxes 25 --episodes 300
+    uv run python main.py --sandboxes 10 --episodes 300
     python main.py --sandboxes 100 --episodes 300
     python main.py --sandboxes 25000 --episodes 300  # the big demo
 """
