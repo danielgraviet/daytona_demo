@@ -1,6 +1,6 @@
 import json
 
-from daytona_sdk import Daytona, CreateSandboxBaseParams as CreateSandboxParams
+from daytona_sdk import Daytona, CreateSandboxFromSnapshotParams as CreateSandboxParams
 
 from models.demo_state import DemoState
 
@@ -18,6 +18,7 @@ def run_sandbox(
     try:
         # Create sandbox
         sandbox = daytona.create(CreateSandboxParams(
+            snapshot="daytonaio/sandbox:0.6.0-slim-id",
             language="python",
             auto_stop_interval=10,    # auto-stop 10 min after inactivity
             auto_delete_interval=30,  # auto-delete 30 min after stopped

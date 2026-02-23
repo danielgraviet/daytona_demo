@@ -1,0 +1,4 @@
+[sandbox 69] id=c7880fa3-29a0-4767-ae05-5567d222eca4
+Failed to upload files: Client error '401 Unauthorized' for url 'https://proxy.app.daytona.io/toolbox/c7880fa3-29a0-4767-ae05-5567d222eca4/files/bulk-upload'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
+

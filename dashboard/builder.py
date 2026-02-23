@@ -18,23 +18,23 @@ def build_dashboard(state: DemoState, episodes: int) -> Panel:
     # ── Header stats ─────────────────────────────────────────────────────
     solved_pct = round(state.n_solved / max(n_done, 1) * 100, 1)
     header = Text()
-    header.append("⏱  ", style="dim")
+    header.append("time: ", style="dim")
     header.append(f"{elapsed}s elapsed   ", style="bold cyan")
-    header.append("🟢 ", style="dim")
+    header.append("run: ", style="dim")
     header.append(f"{n_run} running   ", style="bold green")
-    header.append("✅ ", style="dim")
+    header.append("done: ", style="dim")
     header.append(f"{n_done}/{state.total} complete   ", style="bold white")
     if state.n_error:
-        header.append("✗ ", style="bold red")
+        header.append("err: ", style="bold red")
         header.append(f"{state.n_error} failed   ", style="bold red")
-    header.append("🎯 ", style="dim")
-    header.append(f"{state.n_solved} solved ({solved_pct}%)   ", style="bold yellow")
-    header.append("📈 ", style="dim")
-    header.append(f"avg score {state.avg_final}", style="bold magenta")
+    header.append("solved: ", style="dim")
+    header.append(f"{state.n_solved} ({solved_pct}%)   ", style="bold yellow")
+    header.append("^ score: ", style="dim")
+    header.append(f"avg {state.avg_final}", style="bold magenta")
 
-    # ── Results table (show up to 20 rows) ────────────────────────────────
+    # ── Results table ─────────────────────────────────────────────────────
     with state.lock:
-        sample = sorted(state.results.values(), key=lambda r: r.index)[:20]
+        sample = sorted(state.results.values(), key=lambda r: r.index)
 
     table = Table(
         box=box.SIMPLE_HEAD,
@@ -53,31 +53,25 @@ def build_dashboard(state: DemoState, episodes: int) -> Panel:
     table.add_column("LR",       justify="right",  width=8)
 
     status_styles = {
-        "pending":  ("dim", "…"),
-        "running":  ("green", "⚙ running"),
-        "complete": ("bold white", "✓ done"),
-        "error":    ("red", "✗ error"),
+        "pending":  ("dim", "..."),
+        "running":  ("green", "> running"),
+        "complete": ("bold white", "+ done"),
+        "error":    ("red", "x error"),
     }
 
     for r in sample:
         style, label = status_styles.get(r.status, ("dim", r.status))
-        solved_icon  = "[bold green]✓[/]" if r.solved else "[dim]–[/]"
+        solved_icon  = "[bold green]+[/]" if r.solved else "[dim]-[/]"
         solved_ep    = f" ep{r.solved_at}" if r.solved_at else ""
         table.add_row(
             str(r.index + 1),
-            r.sandbox_id[:12] + "…" if len(r.sandbox_id) > 12 else r.sandbox_id,
+            r.sandbox_id[:12] + "..." if len(r.sandbox_id) > 12 else r.sandbox_id,
             f"[{style}]{label}[/]",
             str(r.episode) if r.episode else "–",
             str(r.avg_100) if r.avg_100 else "–",
             str(r.best)    if r.best    else "–",
             f"{solved_icon}{solved_ep}",
             str(r.lr)      if r.lr      else "–",
-        )
-
-    if state.total > 20:
-        table.add_row(
-            "…", f"(+{state.total - 20} more)", "", "", "", "", "", "",
-            style="dim"
         )
 
     layout = Layout(name="root")
@@ -87,7 +81,7 @@ def build_dashboard(state: DemoState, episodes: int) -> Panel:
     )
     return Panel(
         layout,
-        title="[bold cyan]🚀 Harbor + Daytona  ·  CartPole-v1 Distributed RL Demo[/]",
+        title="[bold cyan]Daytona Infra  ·  CartPole-v1 Distributed RL Demo[/]",
         subtitle=f"[dim]{state.total} sandboxes  ·  {episodes} episodes each[/]",
         border_style="cyan",
         padding=(1, 2),

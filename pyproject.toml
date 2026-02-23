@@ -8,5 +8,7 @@ dependencies = [
     "daytona-sdk>=0.144.0",
     "gym>=0.26.2",
     "gymnasium>=1.2.3",
+    "pandas>=2.3.3",
     "rich>=14.3.3",
+    "streamlit>=1.54.0",
 ]

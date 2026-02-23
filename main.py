@@ -7,9 +7,10 @@ Spins up N sandboxes in parallel, uploads cartpole_task.py to each,
 runs it, and streams results into a live Rich terminal dashboard.
 
 Usage:
-    uv run python main.py --sandboxes 10 --episodes 300
-    python main.py --sandboxes 100 --episodes 300
-    python main.py --sandboxes 25000 --episodes 300  # the big demo
+    uv run python main.py --sandboxes 10 --episodes 100
+    uv run python main.py --sandboxes 100 --episodes 100
+    uv run python main.py --sandboxes 25000 --episodes 100  # the big demo
+    uv run python main.py --cleanup                          # delete all running sandboxes
 """
 
 import argparse
@@ -40,23 +41,47 @@ def main():
                         help="Number of sandboxes to spin up (default: 25)")
     parser.add_argument("--episodes",  type=int, default=300,
                         help="Training episodes per sandbox (default: 300)")
-    parser.add_argument("--workers",   type=int, default=None,
+    parser.add_argument("--workers",    type=int, default=None,
                         help="Max parallel threads (default: min(sandboxes, 200))")
+    parser.add_argument("--batch-size", type=int, default=25,
+                        help="Sandboxes to launch per batch (default: 25)")
+    parser.add_argument("--batch-delay", type=float, default=3.0,
+                        help="Seconds to wait between batches (default: 3)")
+    parser.add_argument("--cleanup", action="store_true",
+                        help="Delete all running sandboxes and exit")
     args = parser.parse_args()
 
     if not API_KEY:
         console.print("[bold red]Error:[/] Set DAYTONA_API_KEY environment variable.")
         console.print("  export DAYTONA_API_KEY=your_key_here")
         sys.exit(1)
+    if args.cleanup:
+        daytona_client = Daytona(DaytonaConfig(api_key=API_KEY))
+        result = daytona_client.list()
+        sandboxes = result.items
+        if not sandboxes:
+            console.print("[dim]No sandboxes found.[/]")
+        else:
+            console.print(f"Deleting [bold]{result.total}[/] sandbox(es)...")
+            for s in sandboxes:
+                try:
+                    daytona_client.delete(s)
+                    console.print(f"  [green]✓[/] {s.id}")
+                except Exception as e:
+                    console.print(f"  [red]✗[/] {s.id} — {e}")
+            console.print("[bold green]Done.[/]")
+        sys.exit(0)
 
     if not TASK_SCRIPT.exists():
         console.print(f"[bold red]Error:[/] cartpole_task.py not found at {TASK_SCRIPT}")
         sys.exit(1)
 
     task_code = TASK_SCRIPT.read_text()
-    n         = args.sandboxes
-    episodes  = args.episodes
-    workers   = args.workers or min(n, 200)
+    n           = args.sandboxes
+    episodes    = args.episodes
+    workers     = args.workers or min(n, 200)
+    batch_size  = args.batch_size
+    batch_delay = args.batch_delay
 
     # Vary learning rates across sandboxes for interesting diversity
     lr_choices = [0.001, 0.005, 0.01, 0.02, 0.05]
@@ -70,10 +95,16 @@ def main():
 
     with Live(build_dashboard(state, episodes), refresh_per_second=4, console=console) as live:
         with ThreadPoolExecutor(max_workers=workers) as executor:
-            futures = {
-                executor.submit(run_sandbox, i, state, daytona_client, episodes, lrs[i], task_code): i
-                for i in range(n)
-            }
+            futures = {}
+            indices = list(range(n))
+            for batch_start in range(0, n, batch_size):
+                batch = indices[batch_start:batch_start + batch_size]
+                for i in batch:
+                    futures[executor.submit(run_sandbox, i, state, daytona_client, episodes, lrs[i], task_code)] = i
+                if batch_start + batch_size < n:
+                    for _ in range(int(batch_delay / 0.25)):
+                        live.update(build_dashboard(state, episodes))
+                        time.sleep(0.25)
             while any(f.running() for f in futures) or not all(f.done() for f in futures):
                 live.update(build_dashboard(state, episodes))
                 time.sleep(0.25)
@@ -96,8 +127,8 @@ def main():
         console.print()
         console.print(f"  [bold red]{n_err} sandbox(es) failed or timed out[/] — "
                       f"[green]{n_done} others completed unaffected.[/]")
-        console.print(f"  [dim]This is horizontal scaling in action: one bad experiment")
-        console.print(f"  never blocks the rest. A single beefy server has no such isolation.[/]")
+        console.print("  [dim]This is horizontal scaling in action: one bad experiment[/]")
+        console.print("  [dim]never blocks the rest. A single beefy server has no such isolation.[/]")
 
         log_path = Path(__file__).parent / "errors.log"
         with log_path.open("w") as f:
