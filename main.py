@@ -7,6 +7,7 @@ Spins up N sandboxes in parallel, uploads cartpole_task.py to each,
 runs it, and streams results into a live Rich terminal dashboard.
 
 Usage:
+    uv run streamlit run streamlit_app.py                    # web UI
     uv run python main.py --sandboxes 10 --episodes 100
     uv run python main.py --sandboxes 100 --episodes 100
     uv run python main.py --sandboxes 25000 --episodes 100  # the big demo
