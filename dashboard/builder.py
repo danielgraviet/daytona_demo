@@ -81,8 +81,8 @@ def build_dashboard(state: DemoState, episodes: int) -> Panel:
     )
     return Panel(
         layout,
-        title="[bold cyan]Daytona Infra  ·  CartPole-v1 Distributed RL Demo[/]",
+        title="[bold #00FF41]Daytona Infra  ·  CartPole-v1 Distributed RL Demo[/]",
         subtitle=f"[dim]{state.total} sandboxes  ·  {episodes} episodes each[/]",
-        border_style="cyan",
+        border_style="#00FF41",
         padding=(1, 2),
     )
