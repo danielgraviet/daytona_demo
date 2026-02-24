@@ -1,4 +1,4 @@
-# Harbor + Daytona · CartPole-v1 Distributed RL Demo
+# Daytona · CartPole-v1 Distributed RL Demo
 
 A demo that spins up N isolated Daytona sandboxes in parallel, runs a CartPole-v1 evaluation job inside each one, and streams live results into a Rich terminal dashboard.
 
